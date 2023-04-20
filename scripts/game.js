@@ -2,12 +2,17 @@
 /// Game
 var tilesGrid = [];
 var tilesShown = [];
-var flags = [];
+var flagsGrid = [];
 var playing = true;
+/// For loops
+var rippling = false;
+/// Games
+var flags = gridBombs;
 
 // Functions
 /// Private
 function _updateScreen(){
+  // Thing
   for(var y = 0; y < gridHeight; y++){
     for(var x = 0; x < gridWidth; x++){
       // Drawing with CANVAS
@@ -55,8 +60,8 @@ function _updateScreen(){
       }
 
       // Drawing flags
-      if(flags[y*gridHeight+x] != 0){
-        switch(flags[y*gridHeight+x]){
+      if(flagsGrid[y*gridHeight+x] != 0){
+        switch(flagsGrid[y*gridHeight+x]){
         case 1:
           drawTileMap("data/icons.png", x,y, _tileWidth-1,_tileHeight-1, 0,0, 16,16);
           break;
@@ -67,6 +72,10 @@ function _updateScreen(){
       }
     }
   }
+
+  // UI
+  UI_Flags.textContent = flags;
+  console.log(flags);
 }
 function _startGrid(){
   /*
@@ -87,11 +96,24 @@ function _startGrid(){
       // Add to shown
       tilesGrid.push(0);
       tilesShown.push(0);
-      flags.push(0);
+      flagsGrid.push(0);
     }
   }
 }
 function _createGrid(){
+  // Mouse to cursor pos
+  // Get mouse position
+  var _mx = mousePosition[0];
+  var _my = mousePosition[1];
+
+  // Convert it to local grid space
+  _mx -= UI_Canvas.offsetLeft;
+  _my -= UI_Canvas.offsetTop;
+
+  // Convert _mx and _my to be able to be used to find the tile the user wants
+  let _x = Math.floor(_mx / (UI_Canvas.width / gridWidth));
+  let _y = Math.floor(_my / (UI_Canvas.height / gridHeight));
+
   // Random Bombs
   for(var i = 0; i < gridBombs; i++){
     // Placeholder positions
@@ -103,7 +125,8 @@ function _createGrid(){
       _bx = parseInt(Math.random() * 10);
       _by = parseInt(Math.random() * 10);
 
-      if(tilesGrid[_by*gridHeight+_bx] == 0){
+      if(tilesGrid[_by*gridHeight+_bx] == 0
+      && _bx != _x && _by != _y){
         break;
       }
     }
@@ -144,60 +167,78 @@ function _getNumber(x,y){
   return result;
 }
 
+function spawnRipple(x, y) {
+  // Tile with bombs near?
+  if(_getNumber(x,y) != ""){
+    rippling = false;
+    return;
+  }
+
+  // Checking if this is a bad tile..
+  for (var _y = -1; _y < 2; _y++) {
+    for (var _x = -1; _x < 2; _x++) {
+      // Checking for things that will cause it to fail
+      if (_x == 0 && _y == 0) {
+        continue;
+      }
+      if (x + _x < 0 || x + _x >= gridWidth || y + _y < 0 || y + _y >= gridHeight) {
+        continue;
+      }
+      
+      // No diagonal
+      if((_x == -1 && _y == -1)
+      || (_x == -1 && _y ==  1)
+      || (_x ==  1 && _y == -1)
+      || (_x ==  1 && _y ==  1)){
+        continue;
+      }
+
+      // Bombs near?
+      if(_getNumber(x+_x, y+_y) != ""){
+        tilesShown[(y + _y) * gridWidth + (x + _x)] = 1;
+        continue;
+      }
+
+      // The beef and potatoes!
+      if (!tilesShown[(y + _y) * gridWidth + (x + _x)] && !_chkTile(x + _x, y + _y)) {
+        tilesShown[(y + _y) * gridWidth + (x + _x)] = 1;
+        spawnRipple(x + _x, y + _y);
+      }
+    }
+  }
+
+  // Checking for a fail
+  for (var _y = -1; _y < 2; _y++) {
+    for (var _x = -1; _x < 2; _x++) {
+      // Checking for things that will cause it to fail
+      if (_x == 0 && _y == 0) {
+        continue;
+      }
+      if (x + _x < 0 || x + _x >= gridWidth || y + _y < 0 || y + _y >= gridHeight) {
+        continue;
+      }
+
+      // The beef and potatoes!
+      if (!tilesShown[(y + _y) * gridWidth + (x + _x)] && !_chkTile(x + _x, y + _y)) {
+        return;
+      }
+    }
+  }
+
+  // Failing..
+  rippling = false;
+}
 function _revealTiles(x, y) {
   // Are we clicking on a flag?
-  if(flags[y*gridHeight+x] != 0){return};
+  if(flagsGrid[y*gridHeight+x] != 0){return};
 
+  // Set clicked tile
   _setTile(x, y, 1);
-  var sweepScale = 1;
-  while (sweepScale < (gridWidth + gridHeight) / 2) {
-    var mineFound = false;
-
-    for (var _y = -sweepScale; _y <= sweepScale; _y++) {
-      for (var _x = -sweepScale; _x <= sweepScale; _x++) {
-        if (_x == 0 && _y == 0) {
-          continue; // Skip the center tile
-        }
-        if (_chkTile(x + _x, y + _y)) {
-          mineFound = true;
-          break;
-        }
-      }
-      if (mineFound) {
-        break;
-      }
-    }
-
-    if (mineFound) {
-      console.log("MINE");
-      break;
-    }
-    else {
-      console.log("SUCCESS");
-      for (var _y = -sweepScale; _y <= sweepScale; _y++) {
-        for (var _x = -sweepScale; _x <= sweepScale; _x++) {
-          if (_x == 0 && _y == 0) {
-            continue; // Skip the center tile
-          }
-
-          if(x + _x < 0 || x + _x > gridWidth - 1){
-            continue; // Out of range
-          }
-          if(y + _y < 0 || y + _y > gridHeight - 1){
-            continue; // Out of range
-          }
-
-          _setTile(x + _x, y + _y, 1);
-        }
-      }
-    }
-
-    if (sweepScale >= (gridWidth + gridHeight) / 2) {
-      console.log("Eject");
-      break;
-    }
-
-    sweepScale++;
+  
+  // RIPPLE EFFECT METHOD
+  rippling = true;
+  while(rippling){
+    spawnRipple(x,y);
   }
 
   if (tilesGrid[y * gridWidth + x]) {
@@ -239,6 +280,11 @@ function _addFlag(event){
   // Prevent default
   event.preventDefault();
 
+  // Too many flags?
+  if(flags <= 0){
+    return;
+  }
+
   // Get mouse position
   var _mx = mousePosition[0];
   var _my = mousePosition[1];
@@ -252,12 +298,22 @@ function _addFlag(event){
   let _y = Math.floor(_my / (UI_Canvas.height / gridHeight));
 
   // Now, let's add the flag!
-  flags[_y*gridHeight+_x]++;
-  if(flags[_y*gridHeight+_x] > 2){
-    flags[_y*gridHeight+_x] = 0;
+  flagsGrid[_y*gridHeight+_x]++;
+  if(flagsGrid[_y*gridHeight+_x] > 2){
+    flagsGrid[_y*gridHeight+_x] = 0;
   }
 
-  console.log("New Flag: " + flags[_y*gridHeight+_x]);
+  console.log("New Flag: " + flagsGrid[_y*gridHeight+_x]);
+}
+function _getFlags(){
+  flags = gridBombs;
+  for(var y = 0; y < gridHeight; y++){
+    for(var x = 0; x < gridWidth; x++){
+      if(flagsGrid[y*gridHeight+x] == 1){
+        flags--;
+      }
+    }
+  }
 }
 
 /// Public
@@ -267,6 +323,7 @@ function _endGame(){
 }
 function _onUpdate(){
   // Drawing:
+  _getFlags();
   _updateScreen();
 }
 function _onStart(){
