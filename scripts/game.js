@@ -2,6 +2,8 @@
 /// Game
 var tilesGrid = [];
 var tilesShown = [];
+var flags = [];
+var playing = true;
 
 // Functions
 /// Private
@@ -34,6 +36,7 @@ function _updateScreen(){
       ctx.rect(x * _tileWidth, y * _tileHeight, _tileWidth-2, _tileHeight-2);
       ctx.stroke();
 
+      // Numbered tiles
       if(tilesGrid[y*gridHeight+x] == 0
       && tilesShown[y*gridHeight+x] == 1){
         // Drawing for numbers
@@ -43,7 +46,25 @@ function _updateScreen(){
         ctx.fillText(_getNumber(x,y), 
           (x * _tileWidth) + (_tileWidth / 2),
           (y * _tileHeight) + (_tileHeight / 2));
+      }
+
+      // Drawing the mines when the game is over
+      if(!playing
+      && tilesGrid[y*gridHeight+x] == 1){
+        drawTileMap("data/icons.png", x,y, _tileWidth,_tileHeight, 0,16, 16,16);
+      }
+
+      // Drawing flags
+      if(flags[y*gridHeight+x] != 0){
+        switch(flags[y*gridHeight+x]){
+        case 1:
+          drawTileMap("data/icons.png", x,y, _tileWidth-1,_tileHeight-1, 0,0, 16,16);
+          break;
+        case 2:
+          drawTileMap("data/icons.png", x,y, _tileWidth-1,_tileHeight-1, 16,0, 16,16);
+          break;
         }
+      }
     }
   }
 }
@@ -66,6 +87,7 @@ function _startGrid(){
       // Add to shown
       tilesGrid.push(0);
       tilesShown.push(0);
+      flags.push(0);
     }
   }
 }
@@ -123,6 +145,9 @@ function _getNumber(x,y){
 }
 
 function _revealTiles(x, y) {
+  // Are we clicking on a flag?
+  if(flags[y*gridHeight+x] != 0){return};
+
   _setTile(x, y, 1);
   var sweepScale = 1;
   while (sweepScale < (gridWidth + gridHeight) / 2) {
@@ -210,10 +235,35 @@ function _clickTile(){
   // Update
   _revealTiles(_x, _y);
 }
+function _addFlag(event){
+  // Prevent default
+  event.preventDefault();
+
+  // Get mouse position
+  var _mx = mousePosition[0];
+  var _my = mousePosition[1];
+
+  // Convert it to local grid space
+  _mx -= UI_Canvas.offsetLeft;
+  _my -= UI_Canvas.offsetTop;
+
+  // Convert _mx and _my to be able to be used to find the tile the user wants
+  let _x = Math.floor(_mx / (UI_Canvas.width / gridWidth));
+  let _y = Math.floor(_my / (UI_Canvas.height / gridHeight));
+
+  // Now, let's add the flag!
+  flags[_y*gridHeight+_x]++;
+  if(flags[_y*gridHeight+_x] > 2){
+    flags[_y*gridHeight+_x] = 0;
+  }
+
+  console.log("New Flag: " + flags[_y*gridHeight+_x]);
+}
 
 /// Public
 function _endGame(){
   alert("YOU HIT A MINE!");
+  playing = false;
 }
 function _onUpdate(){
   // Drawing:
@@ -229,4 +279,5 @@ function _onStart(){
 
 // Events
 window.addEventListener("load", _onStart);
-window.addEventListener("click", _clickTile);
+UI_Canvas.addEventListener("click", _clickTile);
+UI_Canvas.addEventListener("contextmenu", _addFlag);
