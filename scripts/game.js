@@ -8,26 +8,42 @@ var tilesShown = [];
 function _updateScreen(){
   for(var y = 0; y < gridHeight; y++){
     for(var x = 0; x < gridWidth; x++){
-      let _curTile = document.getElementById(x + "x" + y);
-      if(tilesShown[y*gridHeight+x]){
-        _curTile.className = "grid_tile_" + (tilesGrid[y*gridHeight+x] + 1);
+      // Drawing with CANVAS
+      let _tileWidth = UI_Canvas.width / gridWidth;
+      let _tileHeight = UI_Canvas.height / gridHeight;
 
-        if(tilesGrid[y*gridHeight+x] == 0){
-          // Getting surrounding
-          let _curNum = _getNumber(x,y);
+      // Drawing
+      /// New Object
+      ctx.beginPath();
 
-          _curTile.children[0].innerText = _curNum.toString(); 
+      /// Color?
+      switch(tilesShown[y*gridHeight+x]){
+      case 0:
+        ctx.fillStyle = "#222222";
+        break;
+      case 1:
+        ctx.fillStyle = "#2a2a2a";
+        break;
+      }
+
+      /// The rest
+      ctx.rect(x * _tileWidth, y * _tileHeight, _tileWidth-2, _tileHeight-2);
+      ctx.fill();
+
+      ctx.strokeStyle = "#333333";
+      ctx.rect(x * _tileWidth, y * _tileHeight, _tileWidth-2, _tileHeight-2);
+      ctx.stroke();
+
+      if(tilesGrid[y*gridHeight+x] == 0
+      && tilesShown[y*gridHeight+x] == 1){
+        // Drawing for numbers
+        ctx.font = "30px Arial";
+        ctx.fillStyle = "#ffffff";
+
+        ctx.fillText(_getNumber(x,y), 
+          (x * _tileWidth) + (_tileWidth / 2),
+          (y * _tileHeight) + (_tileHeight / 2));
         }
-      }
-      else{
-        _curTile.className = "grid_tile_0";
-      }
-
-      // TEMP
-      if(tilesGrid[y*gridHeight+x] == 1
-      && DBG_SHOWMINES){
-        _curTile.className = "grid_tile_2";
-      }
     }
   }
 }
@@ -46,29 +62,11 @@ function _startGrid(){
 
   // Loops for Grids
   for(var y = 0; y < gridHeight; y++){
-    var _newRow = document.createElement("div");
-    _newRow.className = "grid_row";
-
     for(var x = 0; x < gridWidth; x++){
       // Add to shown
       tilesGrid.push(0);
       tilesShown.push(0);
-
-      // New element to add to GRID
-      var _newTile = document.createElement("div");
-      _newTile.className = "grid_tile_0";
-      _newTile.id = x + "x" + y;
-      _newTile.innerHTML = "<p id='text'></p>";
-
-      // Event?
-      _newTile.setAttribute("onclick", "_clickTile('" + x + "x" + y + "')");
-
-      // Append it to our row
-      _newRow.appendChild(_newTile);
     }
-
-    // Append the row to our grid
-    UI_Grid.appendChild(_newRow);
   }
 }
 function _createGrid(){
@@ -107,8 +105,8 @@ function _getNumber(x,y){
   // Go through all tiles
   for(var _y = y-1; _y < y+2; _y++){
     for(var _x = x-1; _x < x+2; _x++){
-      if(_y > 0 && _y < gridHeight - 1
-      && _x > 0 && _x < gridWidth - 1){
+      if((_y >= 0 && _y < gridHeight)
+      && (_x >= 0 && _x < gridWidth)){
         if(_chkTile(_x,_y) > 0){
           result++;
         }
@@ -181,11 +179,24 @@ function _revealTiles(x, y) {
     _endGame();
   }
 }
-function _clickTile(tilePOS){
-  // Split up and get X and Y
-  let splitPos = tilePOS.split("x");
-  let _x = parseInt(splitPos[0]);
-  let _y = parseInt(splitPos[1]);
+function _clickTile(){
+  // The whole reason I was going to use Divs is because
+  // It would have been easier but.. No.. Of course not
+  // Javascript is Never simple or it never works like C/C++ does.
+  
+  // Get mouse position
+  var _mx = mousePosition[0];
+  var _my = mousePosition[1];
+
+  // Convert it to local grid space
+  _mx -= UI_Canvas.offsetLeft;
+  _my -= UI_Canvas.offsetTop;
+
+  // Convert _mx and _my to be able to be used to find the tile the user wants
+  let _x = Math.floor(_mx / (UI_Canvas.width / gridWidth));
+  let _y = Math.floor(_my / (UI_Canvas.height / gridHeight));
+
+  console.log(_x, _y);
 
   // Check if we need to init the grid
   let sum = 0;
@@ -198,7 +209,6 @@ function _clickTile(tilePOS){
 
   // Update
   _revealTiles(_x, _y);
-  _updateScreen();
 }
 
 /// Public
@@ -206,11 +216,17 @@ function _endGame(){
   alert("YOU HIT A MINE!");
 }
 function _onUpdate(){
-
+  // Drawing:
+  _updateScreen();
 }
 function _onStart(){
+  // Init
   _startGrid();
+
+  // Start loop
+  thread = window.setInterval(_onUpdate, 3);
 }
 
 // Events
 window.addEventListener("load", _onStart);
+window.addEventListener("click", _clickTile);
