@@ -1,0 +1,84 @@
+/* Elements */
+body{
+  background-color: #0A0A0A;
+  color: #FFFFFF
+}
+button{
+  background: #bbbbbb;
+  color: #2A2A2A;
+
+  border: 0px solid black;
+  border-radius: 5px;
+
+  padding: 5px;
+  margin: 10px;
+
+  cursor: pointer;
+}
+
+/* Classes */
+.grid_head{
+  background-color: #888888;
+  color: #aa0000;
+
+  text-align: center;
+}
+.grid_tile_0{
+  background-color: #2c2c2c;
+  color: #FFFFFF;
+
+  width: 50px;
+  height: 50px;
+
+  padding: 0px;
+  margin: 2px;
+  display: inline-block;
+
+  cursor: pointer;
+}
+.grid_tile_1{
+  background-color: #444444;
+  color: #FFFFFF;
+
+  width: 50px;
+  height: 50px;
+
+  padding: 0px;
+  margin: 2px;
+  display: inline-block;
+
+  cursor: pointer;
+}
+.grid_tile_1 p{
+  margin: 0px;
+  padding: 0px;
+}
+.grid_tile_2{
+  background-color: #ff1111;
+  color: #FFFFFF;
+
+  width: 50px;
+  height: 50px;
+
+  padding: 0px;
+  margin: 2px;
+  display: inline-block;
+
+  cursor: pointer;
+}
+.grid_row{
+  width: auto;
+  height: auto;
+
+  margin: 0px;
+  padding: 0px;
+}
+
+/* Objects */
+#grid{
+  background-color: #2A2A2A;
+  color: #FFFFFF;
+
+  width: 700px;
+  margin-left: 25%;
+}
