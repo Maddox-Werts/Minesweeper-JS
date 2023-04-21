@@ -29,7 +29,7 @@ function drawTileMap(tilepath, x,y, w,h, tx,ty, tw,th){
   var tileset = new Image();
   tileset.src = tilepath;
   ctx.fillStyle = "#ffffff";
-  ctx.drawImage(tileset, tx,ty, tw,th, x * w, y * h, w, h);
+  ctx.drawImage(tileset, tx*tw,ty*th, tw,th, x * w, y * h, w, h);
 }
 
 // Events

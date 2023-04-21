@@ -11,7 +11,27 @@ var flags = gridBombs;
 
 // Functions
 /// Private
+function _checkWin(){
+  // Matches
+  var matches = 0;
+
+  for(var y = 0; y < gridHeight; y++){
+    for(var x = 0; x < gridWidth; x++){
+      if(flagsGrid[y*gridHeight+x]
+      && tilesGrid[y*gridHeight+x]){
+        matches++;
+      }
+    }
+  }
+
+  if(matches >= gridBombs){
+    _winGame();
+  }
+}
 function _updateScreen(){
+  // Mode of tile?
+  var tileMode = 0;
+
   // Thing
   for(var y = 0; y < gridHeight; y++){
     for(var x = 0; x < gridWidth; x++){
@@ -24,54 +44,79 @@ function _updateScreen(){
       ctx.beginPath();
 
       /// Color?
-      switch(tilesShown[y*gridHeight+x]){
-      case 0:
-        ctx.fillStyle = "#222222";
-        break;
-      case 1:
-        ctx.fillStyle = "#2a2a2a";
-        break;
-      }
+      ctx.fillStyle = "#ffffff";
 
-      /// The rest
-      ctx.rect(x * _tileWidth, y * _tileHeight, _tileWidth-2, _tileHeight-2);
-      ctx.fill();
-
-      ctx.strokeStyle = "#333333";
-      ctx.rect(x * _tileWidth, y * _tileHeight, _tileWidth-2, _tileHeight-2);
-      ctx.stroke();
-
-      // Numbered tiles
-      if(tilesGrid[y*gridHeight+x] == 0
-      && tilesShown[y*gridHeight+x] == 1){
-        // Drawing for numbers
-        ctx.font = "30px Arial";
-        ctx.fillStyle = "#ffffff";
-
-        ctx.fillText(_getNumber(x,y), 
-          (x * _tileWidth) + (_tileWidth / 2),
-          (y * _tileHeight) + (_tileHeight / 2));
-      }
-
-      // Drawing the mines when the game is over
+      // Game over, show mines
       if(!playing
       && tilesGrid[y*gridHeight+x] == 1){
-        drawTileMap("data/icons.png", x,y, _tileWidth,_tileHeight, 0,16, 16,16);
+        tileMode = 0;
+      }
+      // Numbered tiles
+      else if(!tilesGrid[y*gridHeight+x]
+      && tilesShown[y*gridHeight+x]){
+        tileMode = 1;
+      }
+      // Flag tiles
+      else if(flagsGrid[y*gridHeight+x]){
+        tileMode = 2;
+      }
+      // Standard tiles
+      else{
+        tileMode = 3;
       }
 
-      // Drawing flags
-      if(flagsGrid[y*gridHeight+x] != 0){
-        switch(flagsGrid[y*gridHeight+x]){
+      // What tile mode do we use?
+      switch(tileMode){
+      case 0:
+        drawTileMap("data/icons.png", x, y, _tileWidth, _tileHeight, 2,0, 16,16);
+        break;
+      case 1:
+        
+        // Todo: Add numbered tiles support
+        switch(_getNumber(x,y)){
+        case "":
+          drawTileMap("data/icons.png", x, y, _tileWidth, _tileHeight, 3,0, 16,16);
+          break;
         case 1:
-          drawTileMap("data/icons.png", x,y, _tileWidth-1,_tileHeight-1, 0,0, 16,16);
+          drawTileMap("data/icons.png", x, y, _tileWidth, _tileHeight, 0,1, 16,16);
           break;
         case 2:
-          drawTileMap("data/icons.png", x,y, _tileWidth-1,_tileHeight-1, 16,0, 16,16);
+          drawTileMap("data/icons.png", x, y, _tileWidth, _tileHeight, 1,1, 16,16);
+          break;
+        case 3:
+          drawTileMap("data/icons.png", x, y, _tileWidth, _tileHeight, 2,1, 16,16);
+          break;
+        case 4:
+          drawTileMap("data/icons.png", x, y, _tileWidth, _tileHeight, 3,1, 16,16);
+          break;
+        case 5:
+          drawTileMap("data/icons.png", x, y, _tileWidth, _tileHeight, 0,2, 16,16);
+          break;
+        case 6:
+          drawTileMap("data/icons.png", x, y, _tileWidth, _tileHeight, 1,2, 16,16);
+          break;
+        case 7:
+          drawTileMap("data/icons.png", x, y, _tileWidth, _tileHeight, 2,2, 16,16);
+          break;
+        case 8:
+          drawTileMap("data/icons.png", x, y, _tileWidth, _tileHeight, 3,2, 16,16);
           break;
         }
+
+        break;
+      case 2:
+        drawTileMap("data/icons.png", x, y, _tileWidth, _tileHeight, 1,0, 16,16);
+        break;
+        
+      case 3:
+        drawTileMap("data/icons.png", x, y, _tileWidth, _tileHeight, 0,0, 16,16);
+        break;
       }
     }
   }
+
+  // Win check
+  _checkWin();
 
   // UI
   UI_Flags.textContent = flags;
@@ -305,10 +350,7 @@ function _addFlag(event){
   let _y = Math.floor(_my / (UI_Canvas.height / gridHeight));
 
   // Now, let's add the flag!
-  flagsGrid[_y*gridHeight+_x]++;
-  if(flagsGrid[_y*gridHeight+_x] > 2){
-    flagsGrid[_y*gridHeight+_x] = 0;
-  }
+  flagsGrid[_y*gridHeight+_x] = !flagsGrid[_y*gridHeight+_x];
 
   console.log("New Flag: " + flagsGrid[_y*gridHeight+_x]);
 }
@@ -327,6 +369,9 @@ function _getFlags(){
 function _endGame(){
   alert("YOU HIT A MINE!");
   playing = false;
+}
+function _winGame(){
+  alert("You Won!");
 }
 function _onUpdate(){
   // Drawing:
