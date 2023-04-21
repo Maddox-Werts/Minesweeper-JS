@@ -237,10 +237,17 @@ function _revealTiles(x, y) {
   
   // RIPPLE EFFECT METHOD
   rippling = true;
+  // Force ripple ending if things carry on forever
+  setTimeout(function(){
+    rippling = false;
+  }, 1500);
+
+  // Ripple!
   while(rippling){
     spawnRipple(x,y);
   }
 
+  // You messed up..
   if (tilesGrid[y * gridWidth + x]) {
     _endGame();
   }
